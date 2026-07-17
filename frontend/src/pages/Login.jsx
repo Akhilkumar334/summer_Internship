@@ -1,5 +1,5 @@
-import { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useContext, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 const Login = () => {
@@ -9,17 +9,21 @@ const Login = () => {
   
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // Default to candidate if no role is found in URL
+  const role = searchParams.get('role') || 'candidate';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     
-    // Mock login logic
+    // Mock login logic using the role from the URL parameter
     const mockUser = {
       id: '1',
       email,
       name: email.split('@')[0],
-      role: email.includes('employer') ? 'employer' : 'candidate' // Simple mock logic to determine role
+      role: role 
     };
     
     login(mockUser, 'mock-jwt-token');
@@ -32,11 +36,13 @@ const Login = () => {
     }
   };
 
+  const roleDisplay = role === 'employer' ? 'Employer' : 'Candidate';
+
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Welcome Back</h2>
-        <p className="auth-subtitle">Login to your account to continue</p>
+        <h2>{roleDisplay} Login</h2>
+        <p className="auth-subtitle">Login to your {role} account to continue</p>
         
         {error && <div className="auth-error">{error}</div>}
         
@@ -69,7 +75,10 @@ const Login = () => {
         </form>
         
         <p className="auth-switch">
-          Don't have an account? <Link to="/signup">Sign up</Link>
+          Don't have an account? <Link to={`/signup?role=${role}`}>Sign up</Link>
+        </p>
+        <p className="auth-switch" style={{ marginTop: '0.5rem' }}>
+          <Link to="/">← Back to role selection</Link>
         </p>
       </div>
     </div>

@@ -1,55 +1,42 @@
 import React, { useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { mockAppliedJobs } from '../mockData';
 
 const CandidateDashboard = () => {
-  const { user, logout } = useContext(AuthContext);
+  const { user } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
-
   return (
-    <div className="dashboard">
-      <nav className="navbar">
-        <div className="nav-brand">
-          <h1>Job Board</h1>
-          <span className="badge candidate-badge">Candidate</span>
-        </div>
-        <div className="nav-actions">
-          <span className="user-email">{user?.email}</span>
-          <button onClick={handleLogout} className="btn-logout">Logout</button>
-        </div>
-      </nav>
-      
-      <div className="content">
-        <div className="dashboard-header">
-          <h2>Welcome back, {user?.name || 'Candidate'}!</h2>
-          <p>Find your next big opportunity.</p>
-        </div>
+    <div className="page-content">
+      <div className="page-header">
+        <h2>Welcome back, {user?.name || 'Candidate'}!</h2>
+        <p>Here are the jobs you've recently applied to.</p>
+      </div>
 
-        <div className="dashboard-grid">
-          <div className="dashboard-card">
-            <h3>My Profile</h3>
-            <p>Update your resume and skills to stand out.</p>
-            <button className="btn-secondary">Edit Profile</button>
-          </div>
-          <div className="dashboard-card">
-            <h3>Job Matches</h3>
-            <p>Discover jobs tailored to your skills.</p>
-            <button className="btn-secondary">View Matches</button>
-          </div>
-          <div className="dashboard-card">
-            <h3>Applications</h3>
-            <p>Track the status of your recent applications.</p>
-            <div className="list-placeholder">
-              <div className="list-item">Software Engineer at TechCorp <span className="status pending">Pending</span></div>
-              <div className="list-item">Frontend Developer at Webify <span className="status accepted">Interview</span></div>
+      <div className="job-cards-container">
+        {mockAppliedJobs.map(job => (
+          <div 
+            key={job.id} 
+            className="modern-job-card"
+            onClick={() => navigate(`/candidate-dashboard/progress/${job.id}`)}
+          >
+            <div className="job-card-header">
+              <div className="company-logo-placeholder">{job.logo}</div>
+              <div className="job-card-title-group">
+                <h3>{job.title}</h3>
+                <p className="company-name">{job.company}</p>
+              </div>
+            </div>
+            
+            <div className="job-card-details">
+              <span className={`status-badge status-${job.status.toLowerCase()}`}>
+                {job.status}
+              </span>
+              <span className="applied-date">Applied: {job.appliedDate}</span>
             </div>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );

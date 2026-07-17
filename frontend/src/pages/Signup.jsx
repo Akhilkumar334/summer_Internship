@@ -1,16 +1,19 @@
 import { useState, useContext } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 const Signup = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('candidate');
   const [error, setError] = useState('');
   
   const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // Default to candidate if no role is found in URL
+  const role = searchParams.get('role') || 'candidate';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -21,7 +24,7 @@ const Signup = () => {
       id: Math.random().toString(36).substr(2, 9),
       email,
       name: name || email.split('@')[0],
-      role
+      role: role
     };
     
     login(mockUser, 'mock-jwt-token');
@@ -34,11 +37,13 @@ const Signup = () => {
     }
   };
 
+  const roleDisplay = role === 'employer' ? 'Employer' : 'Candidate';
+
   return (
     <div className="auth-container">
       <div className="auth-card">
-        <h2>Create an Account</h2>
-        <p className="auth-subtitle">Join us as a candidate or employer</p>
+        <h2>Create {roleDisplay} Account</h2>
+        <p className="auth-subtitle">Join us as a {role}</p>
         
         {error && <div className="auth-error">{error}</div>}
         
@@ -78,38 +83,15 @@ const Signup = () => {
               required
             />
           </div>
-
-          <div className="form-group role-selector">
-            <label>I am a:</label>
-            <div className="role-options">
-              <label className={`role-option ${role === 'candidate' ? 'active' : ''}`}>
-                <input
-                  type="radio"
-                  name="role"
-                  value="candidate"
-                  checked={role === 'candidate'}
-                  onChange={(e) => setRole(e.target.value)}
-                />
-                Candidate
-              </label>
-              <label className={`role-option ${role === 'employer' ? 'active' : ''}`}>
-                <input
-                  type="radio"
-                  name="role"
-                  value="employer"
-                  checked={role === 'employer'}
-                  onChange={(e) => setRole(e.target.value)}
-                />
-                Employer
-              </label>
-            </div>
-          </div>
           
           <button type="submit" className="btn-primary">Sign Up</button>
         </form>
         
         <p className="auth-switch">
-          Already have an account? <Link to="/login">Login</Link>
+          Already have an account? <Link to={`/login?role=${role}`}>Login</Link>
+        </p>
+        <p className="auth-switch" style={{ marginTop: '0.5rem' }}>
+          <Link to="/">← Back to role selection</Link>
         </p>
       </div>
     </div>
