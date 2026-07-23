@@ -21,7 +21,8 @@ const Login = () => {
     // Mock login logic using the role from the URL parameter
     const mockUser = {
       id: '1',
-      email,
+      email: email, // Treating the input as email for the mock, but we'll show it as username or email in UI
+      username: email.split('@')[0], // Generate a mock username based on the input
       name: email.split('@')[0],
       role: role 
     };
@@ -48,13 +49,13 @@ const Login = () => {
         
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">Email or Username</label>
             <input
-              type="email"
+              type="text"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              placeholder="Enter your email or username"
               required
             />
           </div>

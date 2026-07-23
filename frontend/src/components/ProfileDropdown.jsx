@@ -52,6 +52,7 @@ const ProfileDropdown = () => {
         <div className="dropdown-menu">
           <div className="dropdown-header">
             <strong>{user?.name || 'User'}</strong>
+            {user?.username && <p style={{ color: 'var(--primary-color)', fontWeight: '500', margin: '0.125rem 0' }}>@{user.username}</p>}
             <p>{user?.email}</p>
           </div>
           <div className="dropdown-divider"></div>

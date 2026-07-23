@@ -1,11 +1,24 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { mockAppliedJobs } from '../mockData';
 
 const JobProgressDetail = () => {
   const { jobId } = useParams();
   const navigate = useNavigate();
-  const job = mockAppliedJobs.find(j => j.id === jobId);
+  const [job, setJob] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const storedApplications = localStorage.getItem('custom_candidate_applications');
+    const appliedJobs = storedApplications ? JSON.parse(storedApplications) : mockAppliedJobs;
+    const foundJob = appliedJobs.find(j => j.id === jobId);
+    setJob(foundJob);
+    setLoading(false);
+  }, [jobId]);
+
+  if (loading) {
+    return <div className="page-content">Loading...</div>;
+  }
 
   if (!job) {
     return <div className="page-content">Job not found</div>;
@@ -18,7 +31,7 @@ const JobProgressDetail = () => {
       </button>
       
       <div className="detail-header">
-        <div className="company-logo-large">{job.logo}</div>
+        <div className="company-logo-large">{job.logo || 'J'}</div>
         <div className="detail-title-group">
           <h2>{job.title}</h2>
           <p className="company-name-large">{job.company}</p>

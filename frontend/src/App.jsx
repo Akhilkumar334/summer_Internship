@@ -1,7 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useContext } from 'react';
 import { AuthContext } from './context/AuthContext';
-import Counter from './pages/Counter';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import RoleSelection from './pages/RoleSelection';
@@ -32,7 +31,6 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<RoleSelection />} />
-      <Route path="/counter" element={<Counter />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
       
