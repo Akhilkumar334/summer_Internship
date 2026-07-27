@@ -65,4 +65,27 @@ User.prototype.comparePassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+const CandidateProfile = require('./CandidateProfile');
+const EmployerProfile = require('./EmployerProfile');
+const Job = require('./Job');
+const Application = require('./Application');
+
+// Associations
+User.hasOne(CandidateProfile, { foreignKey: 'userId', as: 'candidateProfile', onDelete: 'CASCADE' });
+CandidateProfile.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+User.hasOne(EmployerProfile, { foreignKey: 'userId', as: 'employerProfile', onDelete: 'CASCADE' });
+EmployerProfile.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Job Associations
+User.hasMany(Job, { foreignKey: 'employerId', as: 'jobs', onDelete: 'CASCADE' });
+Job.belongsTo(User, { foreignKey: 'employerId', as: 'employer' });
+
+// Application Associations
+User.hasMany(Application, { foreignKey: 'candidateId', as: 'applications', onDelete: 'CASCADE' });
+Application.belongsTo(User, { foreignKey: 'candidateId', as: 'candidate' });
+
+Job.hasMany(Application, { foreignKey: 'jobId', as: 'applications', onDelete: 'CASCADE' });
+Application.belongsTo(Job, { foreignKey: 'jobId', as: 'job' });
+
 module.exports = User;

@@ -3,6 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const { connectDB, sequelize } = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
+const profileRoutes = require('./routes/profileRoutes');
+const jobRoutes = require('./routes/jobRoutes');
+const applicationRoutes = require('./routes/applicationRoutes');
 
 // Initialize Database
 connectDB();
@@ -18,6 +21,9 @@ app.use(express.json());
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/jobs', jobRoutes);
+app.use('/api/applications', applicationRoutes);
 
 // Base Check Route
 app.get('/', (req, res) => {
