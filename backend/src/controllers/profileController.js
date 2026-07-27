@@ -91,7 +91,8 @@ const updateProfile = async (req, res) => {
             const formData = new FormData();
             formData.append('file', fs.createReadStream(resumePath));
 
-            const parserResponse = await axios.post('http://localhost:8000/parse', formData, {
+            const parserBaseUrl = process.env.PARSER_URL || 'http://localhost:8000';
+            const parserResponse = await axios.post(`${parserBaseUrl}/parse`, formData, {
               headers: {
                 ...formData.getHeaders(),
               },

@@ -197,7 +197,8 @@ const EmployerApplicants = () => {
     if (candidate.resumePath) {
       const parts = candidate.resumePath.split(/[\\/]/);
       const filename = parts[parts.length - 1];
-      window.open(`http://localhost:5001/api/profile/resume/${filename}`, '_blank');
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+      window.open(`${baseUrl}/api/profile/resume/${filename}`, '_blank');
     } else {
       alert('No resume file path available for this candidate.');
     }
