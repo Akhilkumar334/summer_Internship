@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const axios = require('axios');
+const FormData = require('form-data');
 const CandidateProfile = require('../models/CandidateProfile');
 const EmployerProfile = require('../models/EmployerProfile');
 const uploadResume = require('../middleware/uploadMiddleware');
@@ -67,6 +69,8 @@ const updateProfile = async (req, res) => {
 
         let resumePath = profile ? profile.resumePath : null;
         let resumeName = profile ? profile.resumeName : null;
+        let parsedSkills = profile ? profile.parsedSkills : null;
+        let parsedEducation = profile ? profile.parsedEducation : null;
 
         // If a new resume is uploaded, delete the old one
         if (req.file) {
@@ -81,6 +85,30 @@ const updateProfile = async (req, res) => {
           }
           resumePath = req.file.path;
           resumeName = req.file.originalname;
+
+          // Call Python Parser service
+          try {
+            const formData = new FormData();
+            formData.append('file', fs.createReadStream(resumePath));
+
+            const parserResponse = await axios.post('http://localhost:8000/parse', formData, {
+              headers: {
+                ...formData.getHeaders(),
+              },
+            });
+
+            if (parserResponse.data) {
+              const { skills: extractedSkills, education: extractedEdu } = parserResponse.data;
+              if (extractedSkills && extractedSkills.length > 0) {
+                parsedSkills = extractedSkills.join(', ');
+              }
+              if (extractedEdu) {
+                parsedEducation = JSON.stringify(extractedEdu);
+              }
+            }
+          } catch (parserErr) {
+            console.error('Resume parsing failed:', parserErr.message);
+          }
         }
 
         const profileData = {
@@ -95,7 +123,9 @@ const updateProfile = async (req, res) => {
           interests,
           experience,
           resumePath,
-          resumeName
+          resumeName,
+          parsedSkills,
+          parsedEducation
         };
 
         if (profile) {

@@ -1,0 +1,12 @@
+[
+  "Python", "JavaScript", "TypeScript", "Java", "C++", "C#", "C", "Ruby", "PHP", "Swift", "Go", "Kotlin", "Rust", "HTML", "CSS", "SQL", "R", "MATLAB", "Scala", "Perl", "Bash", "Shell",
+  "React", "Angular", "Vue", "Vue.js", "Svelte", "Next.js", "Nuxt.js", "Redux", "Tailwind CSS", "Tailwind", "Bootstrap", "Sass", "LESS", "jQuery", "Webpack", "Vite",
+  "Node.js", "Node", "Express", "Express.js", "Django", "Flask", "FastAPI", "Spring Boot", "Spring", "Ruby on Rails", "Rails", "Laravel", "ASP.NET", "NestJS", "GraphQL", "REST API",
+  "PostgreSQL", "Postgres", "MySQL", "MongoDB", "Redis", "SQLite", "Oracle", "MariaDB", "Cassandra", "DynamoDB", "Firebase", "Elasticsearch",
+  "AWS", "Amazon Web Services", "Azure", "Google Cloud", "Google Cloud Platform", "GCP", "Docker", "Kubernetes", "Jenkins", "Git", "GitHub", "GitLab", "CI/CD", "Terraform", "Ansible", "Nginx", "Linux",
+  "Machine Learning", "Deep Learning", "NLP", "Natural Language Processing", "Computer Vision", "TensorFlow", "PyTorch", "Keras", "Scikit-Learn", "Pandas", "NumPy", "Matplotlib", "Seaborn",
+  "Data Science", "Data Analysis", "Tableau", "Power BI", "Spark", "Hadoop", "Kafka",
+  "Project Management", "Agile", "Scrum", "Jira", "Trello", "GitLab CI", "GitHub Actions", "Unit Testing", "Jest", "Mocha", "Chai", "Cypress", "Selenium",
+  "Docker Compose", "Microservices", "Serverless", "SaaS", "PaaS", "IaaS", "API Design", "System Design",
+  "Communication", "Leadership", "Teamwork", "Problem Solving", "Time Management", "Critical Thinking", "Adaptability"
+]

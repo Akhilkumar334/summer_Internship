@@ -3,3 +3,6 @@ node_modules/
 .env
 dist/
 backend/uploads/
+parser/venv/
+parser/temp/
+__pycache__/

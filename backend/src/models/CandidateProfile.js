@@ -56,6 +56,14 @@ const CandidateProfile = sequelize.define('CandidateProfile', {
     type: DataTypes.STRING,
     allowNull: true,
   },
+  parsedSkills: {
+    type: DataTypes.TEXT, // Comma-separated list of parsed skills
+    allowNull: true,
+  },
+  parsedEducation: {
+    type: DataTypes.TEXT, // JSON string of parsed education details
+    allowNull: true,
+  },
 });
 
 module.exports = CandidateProfile;
