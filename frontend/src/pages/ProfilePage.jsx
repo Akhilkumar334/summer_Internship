@@ -1,5 +1,6 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { apiFetch } from '../utils/api';
 
 const ProfilePage = () => {
   const { user, login, token } = useContext(AuthContext);
@@ -30,56 +31,112 @@ const ProfilePage = () => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
+  const [resumeFile, setResumeFile] = useState(null);
 
-  const handleSave = (e) => {
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const response = await apiFetch('/profile');
+        const profile = response.profile || {};
+        if (user?.role === 'candidate') {
+          setCandidateData({
+            name: profile.name || user?.name || '',
+            contact: profile.contact || user?.contact || '',
+            highestQualification: profile.highestQualification || user?.highestQualification || '',
+            degree: profile.degree || user?.degree || '',
+            college: profile.college || user?.college || '',
+            gradYear: profile.gradYear || user?.gradYear || '',
+            skills: profile.skills || user?.skills || '',
+            interests: profile.interests || user?.interests || '',
+            experience: profile.experience || user?.experience || '',
+            resumeName: profile.resumeName || user?.resumeName || ''
+          });
+        } else {
+          setEmployerData({
+            name: profile.name || user?.name || '',
+            designation: profile.designation || user?.designation || '',
+            companyName: profile.companyName || user?.companyName || '',
+            companyDescription: profile.companyDescription || user?.companyDescription || '',
+            companyWebsite: profile.companyWebsite || user?.companyWebsite || '',
+            companyLocation: profile.companyLocation || user?.companyLocation || '',
+            contact: profile.contact || user?.contact || ''
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err.message);
+      }
+    };
+    if (user) {
+      loadProfile();
+    }
+  }, [user]);
+
+  const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     setSaveMessage('');
 
-    let updatedUser = { ...user };
+    try {
+      let profileResponse;
+      if (user?.role === 'candidate') {
+        const formData = new FormData();
+        formData.append('name', candidateData.name);
+        formData.append('contact', candidateData.contact);
+        formData.append('highestQualification', candidateData.highestQualification);
+        formData.append('degree', candidateData.degree);
+        formData.append('college', candidateData.college);
+        formData.append('gradYear', candidateData.gradYear);
+        formData.append('skills', candidateData.skills);
+        formData.append('interests', candidateData.interests);
+        formData.append('experience', candidateData.experience || 'Fresher');
+        if (resumeFile) {
+          formData.append('resume', resumeFile);
+        }
 
-    if (user?.role === 'candidate') {
-      updatedUser = {
-        ...updatedUser,
-        name: candidateData.name,
-        contact: candidateData.contact,
-        highestQualification: candidateData.highestQualification,
-        degree: candidateData.degree,
-        college: candidateData.college,
-        gradYear: candidateData.gradYear,
-        skills: candidateData.skills,
-        interests: candidateData.interests,
-        experience: candidateData.experience,
-        resumeName: candidateData.resumeName
-      };
-    } else {
-      updatedUser = {
-        ...updatedUser,
-        name: employerData.name,
-        designation: employerData.designation,
-        companyName: employerData.companyName,
-        companyDescription: employerData.companyDescription,
-        companyWebsite: employerData.companyWebsite,
-        companyLocation: employerData.companyLocation,
-        contact: employerData.contact
-      };
-    }
+        profileResponse = await apiFetch('/profile', {
+          method: 'PUT',
+          body: formData
+        });
+      } else {
+        const payload = {
+          name: employerData.name,
+          designation: employerData.designation,
+          companyName: employerData.companyName,
+          companyDescription: employerData.companyDescription,
+          companyWebsite: employerData.companyWebsite,
+          companyLocation: employerData.companyLocation,
+          contact: employerData.contact
+        };
 
-    // Simulate API call and save back to context
-    setTimeout(() => {
+        profileResponse = await apiFetch('/profile', {
+          method: 'PUT',
+          body: payload
+        });
+      }
+
+      const updatedUser = {
+        ...user,
+        ...(profileResponse.profile || {})
+      };
+
       login(updatedUser, token);
       setIsSaving(false);
       setSaveMessage('Profile updated successfully!');
       setTimeout(() => setSaveMessage(''), 3000);
-    }, 600);
+    } catch (err) {
+      setIsSaving(false);
+      setSaveMessage('Error: ' + err.message);
+    }
   };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
       setCandidateData({
         ...candidateData,
-        resumeName: e.target.files[0].name
+        resumeName: file.name
       });
+      setResumeFile(file);
     }
   };
 
@@ -216,6 +273,9 @@ const ProfilePage = () => {
                     {candidateData.resumeName}
                   </span>
                 </div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
+                  This resume will be used to recommend jobs matching your profile.
+                </p>
               </div>
             </>
           ) : (

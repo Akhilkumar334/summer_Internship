@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { mockAppliedJobs } from '../mockData';
+import { apiFetch } from '../utils/api';
 
 const CandidateDashboard = () => {
   const { user } = useContext(AuthContext);
@@ -9,13 +9,28 @@ const CandidateDashboard = () => {
   const [appliedJobs, setAppliedJobs] = useState([]);
 
   useEffect(() => {
-    const storedApplications = localStorage.getItem('custom_candidate_applications');
-    if (storedApplications) {
-      setAppliedJobs(JSON.parse(storedApplications));
-    } else {
-      localStorage.setItem('custom_candidate_applications', JSON.stringify(mockAppliedJobs));
-      setAppliedJobs(mockAppliedJobs);
-    }
+    const fetchApplications = async () => {
+      try {
+        const appsData = await apiFetch('/applications/my-applications');
+        const mapped = (appsData.applications || []).map(app => {
+          const job = app.job || {};
+          const companyName = job.employer?.employerProfile?.companyName || job.employer?.username || 'Job Board Inc';
+          return {
+            id: job.id.toString(),
+            title: job.title,
+            company: companyName,
+            logo: companyName.charAt(0).toUpperCase(),
+            appliedDate: new Date(app.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+            status: app.status === 'Pending' ? 'Applied' : app.status
+          };
+        });
+        setAppliedJobs(mapped);
+      } catch (err) {
+        console.error('Error fetching applications:', err.message);
+      }
+    };
+
+    fetchApplications();
   }, []);
 
   return (

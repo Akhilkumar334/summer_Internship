@@ -7,7 +7,7 @@ const EmployerProfile = require('../models/EmployerProfile');
 // Apply for a Job (Candidate only)
 const applyForJob = async (req, res) => {
   try {
-    const { jobId, coverLetter } = req.body;
+    const { jobId, coverLetter, resumeType, tailoredResumeName } = req.body;
     const candidateId = req.user.id;
 
     if (!jobId) {
@@ -39,7 +39,9 @@ const applyForJob = async (req, res) => {
     const application = await Application.create({
       jobId,
       candidateId,
-      coverLetter
+      coverLetter,
+      resumeType: resumeType || 'primary',
+      tailoredResumeName: resumeType === 'tailored' ? tailoredResumeName : null
     });
 
     res.status(201).json({

@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
+import { apiFetch } from '../utils/api';
 
 export const AuthContext = createContext();
 
@@ -8,15 +9,40 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in on load
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const initializeAuth = async () => {
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        try {
+          // Verify token and get user account details
+          const meData = await apiFetch('/auth/me', {
+            headers: { 'Authorization': `Bearer ${storedToken}` }
+          });
+          
+          let profileData = {};
+          try {
+            // Get profile details (might fail if not completed onboarding)
+            const profileResponse = await apiFetch('/profile', {
+              headers: { 'Authorization': `Bearer ${storedToken}` }
+            });
+            profileData = profileResponse.profile || {};
+          } catch (profileErr) {
+            console.log('Profile not set up yet:', profileErr.message);
+          }
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+          setToken(storedToken);
+          setUser({
+            ...meData.user,
+            ...profileData
+          });
+        } catch (err) {
+          console.error('Session expired or invalid token:', err.message);
+          logout();
+        }
+      }
+      setLoading(false);
+    };
+
+    initializeAuth();
   }, []);
 
   const login = (userData, jwtToken) => {
@@ -34,7 +60,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, setUser, token, login, logout, loading }}>
       {!loading && children}
     </AuthContext.Provider>
   );

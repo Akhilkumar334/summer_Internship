@@ -24,6 +24,15 @@ const Application = sequelize.define('Application', {
     type: DataTypes.TEXT,
     allowNull: true,
   },
+  resumeType: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'primary',
+  },
+  tailoredResumeName: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
 });
 
 module.exports = Application;

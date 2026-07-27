@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { mockAppliedJobs } from '../mockData';
+import { apiFetch } from '../utils/api';
 
 const JobProgressDetail = () => {
   const { jobId } = useParams();
@@ -9,11 +9,45 @@ const JobProgressDetail = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const storedApplications = localStorage.getItem('custom_candidate_applications');
-    const appliedJobs = storedApplications ? JSON.parse(storedApplications) : mockAppliedJobs;
-    const foundJob = appliedJobs.find(j => j.id === jobId);
-    setJob(foundJob);
-    setLoading(false);
+    const fetchApplicationDetail = async () => {
+      try {
+        const appsData = await apiFetch('/applications/my-applications');
+        const matchedApp = (appsData.applications || []).find(app => app.jobId.toString() === jobId);
+        
+        if (matchedApp) {
+          const jobData = matchedApp.job || {};
+          const companyName = jobData.employer?.employerProfile?.companyName || jobData.employer?.username || 'Job Board Inc';
+          
+          const timeline = [
+            { step: 'Applied', date: new Date(matchedApp.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), completed: true },
+            { step: 'Reviewed', date: matchedApp.status !== 'Pending' ? new Date(matchedApp.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null, completed: matchedApp.status !== 'Pending' },
+            { step: 'Interviewed', date: (matchedApp.status === 'Accepted') ? new Date(matchedApp.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null, completed: matchedApp.status === 'Accepted' },
+            { step: 'Offered', date: matchedApp.status === 'Accepted' ? new Date(matchedApp.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null, completed: matchedApp.status === 'Accepted' }
+          ];
+
+          if (matchedApp.status === 'Rejected') {
+            timeline[3] = { step: 'Rejected', date: new Date(matchedApp.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), completed: true };
+          }
+
+          setJob({
+            id: jobData.id.toString(),
+            title: jobData.title,
+            company: companyName,
+            logo: companyName.charAt(0).toUpperCase(),
+            location: jobData.location,
+            salary: typeof jobData.salary === 'number' ? `₹${jobData.salary.toLocaleString('en-IN')}` : jobData.salary || 'Not Disclosed',
+            timeline,
+            description: jobData.description
+          });
+        }
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching application details:', err.message);
+        setLoading(false);
+      }
+    };
+
+    fetchApplicationDetail();
   }, [jobId]);
 
   if (loading) {

@@ -1,10 +1,13 @@
 const express = require('express');
 const { protect } = require('../middleware/authMiddleware');
-const { getProfile, updateProfile } = require('../controllers/profileController');
+const { getProfile, updateProfile, getResume } = require('../controllers/profileController');
 
 const router = express.Router();
 
-// All profile endpoints are protected by JWT
+// Public route for downloading resumes (so window.open works without JWT headers)
+router.get('/resume/:filename', getResume);
+
+// Protected routes (JWT authentication required)
 router.use(protect);
 
 router.route('/')

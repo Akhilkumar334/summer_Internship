@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { apiFetch } from '../utils/api';
 
 const defaultListings = [
   {
@@ -76,91 +77,94 @@ const FindJobs = () => {
   const [selectedJob, setSelectedJob] = useState(null);
   const [appliedJobIds, setAppliedJobIds] = useState([]);
   const [successMessage, setSuccessMessage] = useState('');
+  
+  // Apply Resume Choice States
+  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [applyingJob, setApplyingJob] = useState(null);
+  const [resumeChoice, setResumeChoice] = useState('primary');
+  const [tailoredResumeFile, setTailoredResumeFile] = useState(null);
+  const [tailoredResumeName, setTailoredResumeName] = useState('');
 
   useEffect(() => {
-    // Load from local storage
-    const storedListings = localStorage.getItem('custom_listings');
-    if (storedListings) {
-      setListings(JSON.parse(storedListings));
-    } else {
-      localStorage.setItem('custom_listings', JSON.stringify(defaultListings));
-      setListings(defaultListings);
-    }
+    const fetchJobsAndApplications = async () => {
+      try {
+        // 1. Fetch real jobs from backend
+        const jobsData = await apiFetch('/jobs');
+        const mappedJobs = (jobsData.jobs || []).map(j => ({
+          id: j.id.toString(),
+          title: j.title,
+          company: j.employer?.employerProfile?.companyName || j.employer?.username || 'Job Board Inc',
+          logo: (j.employer?.employerProfile?.companyName || j.employer?.username || 'J').charAt(0).toUpperCase(),
+          location: j.location,
+          salary: typeof j.salary === 'number' ? `₹${j.salary.toLocaleString('en-IN')}` : j.salary || 'Not Disclosed',
+          tags: j.requirements ? j.requirements.split(',').map(s => s.trim()).slice(0, 3) : ['Tech'],
+          posted: new Date(j.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          description: j.description,
+          requiredQualifications: j.requirements || '',
+          experienceRequired: j.jobType || 'Full-time',
+          employmentType: j.jobType || 'Full-time',
+          openings: 1,
+          deadline: '2026-12-31',
+          responsibilities: j.description,
+          preferredQualifications: j.requirements,
+          benefits: 'Competitive package',
+          selectionProcess: 'Interview rounds',
+          additionalRequirements: ''
+        }));
+        setListings(mappedJobs);
 
-    // Load already applied jobs from localStorage if any
-    const storedApplied = localStorage.getItem('applied_job_ids');
-    if (storedApplied) {
-      setAppliedJobIds(JSON.parse(storedApplied));
-    }
-  }, []);
-
-  const handleApply = (job) => {
-    // Prevent double apply
-    if (appliedJobIds.includes(job.id)) return;
-
-    // Add to applied job IDs
-    const updatedAppliedIds = [...appliedJobIds, job.id];
-    setAppliedJobIds(updatedAppliedIds);
-    localStorage.setItem('applied_job_ids', JSON.stringify(updatedAppliedIds));
-
-    // Save the application status to the candidate's list of applied jobs
-    // We can fetch existing custom candidate applications or make a new list
-    const storedAppliedJobs = localStorage.getItem('custom_candidate_applications');
-    const appliedJobs = storedAppliedJobs ? JSON.parse(storedAppliedJobs) : [];
-    
-    const newAppliedJob = {
-      id: job.id,
-      title: job.title,
-      company: job.company,
-      logo: job.logo,
-      appliedDate: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      status: 'Applied',
-      timeline: [
-        { step: 'Applied', date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), completed: true },
-        { step: 'Reviewed', date: null, completed: false },
-        { step: 'Interviewed', date: null, completed: false },
-        { step: 'Offered', date: null, completed: false }
-      ],
-      description: job.description || 'No description provided.',
-      location: job.location,
-      salary: job.salary
+        // 2. Fetch applied job IDs for current candidate
+        if (user && user.role === 'candidate') {
+          const appsData = await apiFetch('/applications/my-applications');
+          const appliedIds = (appsData.applications || []).map(app => app.jobId.toString());
+          setAppliedJobIds(appliedIds);
+        }
+      } catch (err) {
+        console.error('Error fetching jobs:', err.message);
+      }
     };
 
-    appliedJobs.unshift(newAppliedJob);
-    localStorage.setItem('custom_candidate_applications', JSON.stringify(appliedJobs));
+    fetchJobsAndApplications();
+  }, [user]);
 
-    // Add to the applicant list of the Recruiter so the logged-in candidate shows up there!
-    if (user) {
-      const storedApplicants = localStorage.getItem('custom_applicants');
-      const applicants = storedApplicants ? JSON.parse(storedApplicants) : [];
-      
-      // Check if candidate already registered in applicants list
-      const alreadyApplied = applicants.some(app => app.email === user.email && app.role === job.title);
-      if (!alreadyApplied) {
-        applicants.unshift({
-          id: user.id || Math.random().toString(36).substr(2, 9),
-          name: user.name || 'Candidate',
-          role: job.title,
-          status: 'Applied',
-          avatar: (user.name || 'C').substring(0, 2).toUpperCase(),
-          email: user.email,
-          contact: user.contact || 'No contact provided',
-          highestQualification: user.highestQualification || 'Not provided',
-          degree: user.degree || 'Not provided',
-          college: user.college || 'Not provided',
-          gradYear: user.gradYear || 'Not provided',
-          skills: user.skills || 'React, HTML, CSS',
-          interests: user.interests || 'Web Development',
-          experience: user.experience || 'Fresher',
-          resumeName: user.resumeName || 'resume_mock.pdf'
-        });
-        localStorage.setItem('custom_applicants', JSON.stringify(applicants));
-      }
+  const handleInitiateApply = (job) => {
+    if (appliedJobIds.includes(job.id)) return;
+    setApplyingJob(job);
+    setResumeChoice('primary');
+    setTailoredResumeFile(null);
+    setTailoredResumeName('');
+    setShowApplyModal(true);
+  };
+
+  const confirmApply = async () => {
+    if (!applyingJob) return;
+    if (resumeChoice === 'tailored' && !tailoredResumeFile) {
+      alert('Please choose and upload a tailored resume.');
+      return;
     }
 
-    setSuccessMessage('Successfully applied to ' + job.title + '!');
-    setSelectedJob(null);
-    setTimeout(() => setSuccessMessage(''), 4000);
+    try {
+      await apiFetch('/applications', {
+        method: 'POST',
+        body: {
+          jobId: parseInt(applyingJob.id),
+          coverLetter: 'Applying from frontend',
+          resumeType: resumeChoice,
+          tailoredResumeName: resumeChoice === 'tailored' ? tailoredResumeFile.name : null
+        }
+      });
+
+      const updatedAppliedIds = [...appliedJobIds, applyingJob.id];
+      setAppliedJobIds(updatedAppliedIds);
+
+      setSuccessMessage('Successfully applied to ' + applyingJob.title + '!');
+      setSelectedJob(null);
+      setShowApplyModal(false);
+      setApplyingJob(null);
+      setTimeout(() => setSuccessMessage(''), 4000);
+    } catch (err) {
+      alert(err.message || 'Failed to submit application');
+    }
   };
 
   return (
@@ -209,7 +213,7 @@ const FindJobs = () => {
                 <button 
                   className={`btn-primary-small ${isApplied ? 'applied-btn' : ''}`}
                   disabled={isApplied}
-                  onClick={() => handleApply(job)}
+                  onClick={() => handleInitiateApply(job)}
                   style={isApplied ? { backgroundColor: '#e2e8f0', color: '#64748b', border: 'none', cursor: 'not-allowed' } : {}}
                 >
                   {isApplied ? 'Applied' : 'Easy Apply'}
@@ -316,13 +320,101 @@ const FindJobs = () => {
                   <button 
                     className="btn-primary" 
                     disabled={appliedJobIds.includes(selectedJob.id)}
-                    onClick={() => handleApply(selectedJob)}
+                    onClick={() => handleInitiateApply(selectedJob)}
                     style={appliedJobIds.includes(selectedJob.id) ? { backgroundColor: '#e2e8f0', color: '#64748b', border: 'none', cursor: 'not-allowed', padding: '0.6rem 1.5rem' } : { padding: '0.6rem 1.5rem' }}
                   >
                     {appliedJobIds.includes(selectedJob.id) ? 'Applied' : 'Easy Apply'}
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Apply Resume Option Modal */}
+      {showApplyModal && applyingJob && (
+        <div className="modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 1100, padding: '2rem 1rem' }}>
+          <div className="modal-content card" style={{ maxWidth: '500px', width: '100%', padding: '2.5rem', borderRadius: '1rem', backgroundColor: 'var(--card-bg)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: '600' }}>Apply for {applyingJob.title}</h3>
+              <button onClick={() => { setShowApplyModal(false); setApplyingJob(null); }} style={{ background: 'none', border: 'none', fontSize: '1.75rem', cursor: 'pointer', color: 'var(--text-muted)' }}>&times;</button>
+            </div>
+            
+            <p style={{ marginBottom: '1.5rem', fontSize: '0.95rem', color: 'var(--text-muted)' }}>
+              Would you like to upload a new resume tailored for this job, or use your original resume?
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '0.5rem', cursor: 'pointer', backgroundColor: resumeChoice === 'primary' ? 'rgba(79, 70, 229, 0.05)' : 'transparent', borderColor: resumeChoice === 'primary' ? 'var(--primary-color)' : 'var(--border-color)' }}>
+                <input 
+                  type="radio" 
+                  name="resumeOption" 
+                  checked={resumeChoice === 'primary'} 
+                  onChange={() => setResumeChoice('primary')} 
+                  style={{ marginTop: '0.2rem' }}
+                />
+                <div>
+                  <strong style={{ display: 'block', fontSize: '0.95rem' }}>Use my original resume</strong>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                    File: {user?.resumeName || 'Your uploaded primary resume'}
+                  </span>
+                </div>
+              </label>
+
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', padding: '1rem', border: '1px solid var(--border-color)', borderRadius: '0.5rem', cursor: 'pointer', backgroundColor: resumeChoice === 'tailored' ? 'rgba(79, 70, 229, 0.05)' : 'transparent', borderColor: resumeChoice === 'tailored' ? 'var(--primary-color)' : 'var(--border-color)' }}>
+                <input 
+                  type="radio" 
+                  name="resumeOption" 
+                  checked={resumeChoice === 'tailored'} 
+                  onChange={() => setResumeChoice('tailored')}
+                  style={{ marginTop: '0.2rem' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <strong style={{ display: 'block', fontSize: '0.95rem', marginBottom: resumeChoice === 'tailored' ? '0.5rem' : 0 }}>Upload a new resume for this job</strong>
+                  {resumeChoice === 'tailored' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginTop: '0.25rem' }}>
+                      <input 
+                        type="file" 
+                        accept=".pdf,.doc,.docx" 
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            setTailoredResumeFile(e.target.files[0]);
+                            setTailoredResumeName(e.target.files[0].name);
+                          }
+                        }}
+                        style={{ display: 'none' }}
+                        id="tailored-resume-upload"
+                      />
+                      <label htmlFor="tailored-resume-upload" className="btn-secondary" style={{ cursor: 'pointer', margin: 0, padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>
+                        Choose File
+                      </label>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
+                        {tailoredResumeName || 'No file chosen'}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </label>
+            </div>
+
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button 
+                type="button" 
+                className="btn-secondary" 
+                onClick={() => { setShowApplyModal(false); setApplyingJob(null); }} 
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                className="btn-primary" 
+                onClick={confirmApply}
+                style={{ flex: 1, margin: 0 }}
+              >
+                Submit Application
+              </button>
             </div>
           </div>
         </div>

@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '../context/AuthContext';
+import { apiFetch } from '../utils/api';
 
 // Default detailed mock applicants
 const defaultApplicants = [
@@ -90,67 +92,115 @@ const defaultApplicants = [
 ];
 
 const EmployerApplicants = () => {
+  const { user } = useContext(AuthContext);
   const [applicants, setApplicants] = useState([]);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
-  useEffect(() => {
-    const storedApplicants = localStorage.getItem('custom_applicants');
-    if (storedApplicants) {
-      setApplicants(JSON.parse(storedApplicants));
-    } else {
-      localStorage.setItem('custom_applicants', JSON.stringify(defaultApplicants));
-      setApplicants(defaultApplicants);
-    }
-  }, []);
+  const fetchApplicants = async () => {
+    try {
+      if (!user) return;
+      // 1. Fetch employer's jobs
+      const jobsData = await apiFetch('/jobs');
+      const employerJobs = (jobsData.jobs || []).filter(j => j.employerId === user.id);
 
-  const updateStatus = (id, newStatus, e) => {
-    e.stopPropagation(); // Avoid opening profile when modifying status dropdown
-    const updated = applicants.map(app => 
-      app.id === id ? { ...app, status: newStatus } : app
-    );
-    setApplicants(updated);
-    localStorage.setItem('custom_applicants', JSON.stringify(updated));
+      // 2. Fetch applications for each job in parallel
+      const allAppsPromises = employerJobs.map(async (job) => {
+        try {
+          const appsData = await apiFetch(`/applications/job/${job.id}`);
+          return (appsData.applications || []).map(app => {
+            const profile = app.candidate?.candidateProfile || {};
+            const candidateName = profile.name || app.candidate?.username || 'Candidate';
+            
+            // Map backend status to frontend status
+            let displayStatus = 'Applied';
+            if (app.status === 'Reviewed') displayStatus = 'Reviewed';
+            else if (app.status === 'Accepted') displayStatus = 'Offered';
+            else if (app.status === 'Rejected') displayStatus = 'Rejected';
 
-    // Also update this candidate's application in their personal dashboard if applicable
-    const storedApplications = localStorage.getItem('custom_candidate_applications');
-    if (storedApplications) {
-      const candidateApps = JSON.parse(storedApplications);
-      const appToUpdate = applicants.find(app => app.id === id);
-      
-      if (appToUpdate) {
-        const updatedCandidateApps = candidateApps.map(job => {
-          // If the company name matches or job title matches (simplistic match in mock setup)
-          if (job.title === appToUpdate.role) {
-            const updatedTimeline = job.timeline.map(item => {
-              if (item.step === newStatus) {
-                return { ...item, completed: true, date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) };
-              }
-              // Mark previous steps completed depending on status progression
-              if (newStatus === 'Interviewing' && (item.step === 'Reviewed' || item.step === 'Applied')) {
-                return { ...item, completed: true, date: item.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) };
-              }
-              if (newStatus === 'Offered' && item.step !== 'Rejected') {
-                return { ...item, completed: true, date: item.date || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) };
-              }
-              return item;
-            });
-
-            return { 
-              ...job, 
-              status: newStatus,
-              timeline: updatedTimeline
+            const isTailored = app.resumeType === 'tailored';
+            return {
+              id: app.id.toString(),
+              name: candidateName,
+              role: job.title,
+              status: displayStatus,
+              avatar: candidateName.substring(0, 2).toUpperCase(),
+              email: app.candidate?.email || 'N/A',
+              contact: profile.contact || 'N/A',
+              highestQualification: profile.highestQualification || 'N/A',
+              degree: profile.degree || 'N/A',
+              college: profile.college || 'N/A',
+              gradYear: profile.gradYear?.toString() || 'N/A',
+              skills: profile.skills || '',
+              interests: profile.interests || '',
+              experience: profile.experience || '',
+              resumeName: isTailored ? (app.tailoredResumeName || 'tailored_resume.pdf') : (profile.resumeName || 'resume.pdf'),
+              resumePath: isTailored ? '' : (profile.resumePath || ''),
+              isTailored: isTailored
             };
-          }
-          return job;
-        });
-        localStorage.setItem('custom_candidate_applications', JSON.stringify(updatedCandidateApps));
+          });
+        } catch (jobErr) {
+          console.error(`Error fetching applications for job ${job.id}:`, jobErr.message);
+          return [];
+        }
+      });
+
+      const results = await Promise.all(allAppsPromises);
+      const combined = results.flat();
+      setApplicants(combined);
+
+      // Keep selected Candidate modal details updated if open
+      if (selectedCandidate) {
+        const updatedSelected = combined.find(c => c.id === selectedCandidate.id);
+        if (updatedSelected) {
+          setSelectedCandidate(updatedSelected);
+        }
       }
+    } catch (err) {
+      console.error('Error fetching applicants pipeline:', err.message);
     }
   };
 
-  const handleDownloadResume = (e, filename) => {
+  useEffect(() => {
+    fetchApplicants();
+  }, [user]);
+
+  const updateStatus = async (id, newStatus, e) => {
+    if (e && e.stopPropagation) {
+      e.stopPropagation();
+    }
+    
+    // Map frontend status to backend status
+    let backendStatus = 'Pending';
+    if (newStatus === 'Reviewed' || newStatus === 'Interviewing') backendStatus = 'Reviewed';
+    else if (newStatus === 'Offered') backendStatus = 'Accepted';
+    else if (newStatus === 'Rejected') backendStatus = 'Rejected';
+
+    try {
+      await apiFetch(`/applications/${id}`, {
+        method: 'PUT',
+        body: { status: backendStatus }
+      });
+
+      // Reload applicants
+      fetchApplicants();
+    } catch (err) {
+      alert(err.message || 'Failed to update application status');
+    }
+  };
+
+  const handleDownloadResume = (e, candidate) => {
     e.stopPropagation();
-    alert(`Downloading mock resume file: ${filename}`);
+    if (candidate.isTailored) {
+      alert(`"${candidate.resumeName}" is a tailored resume uploaded for this specific job application.\n(Note: Physical file storage for tailored resumes will be implemented in a future phase).`);
+      return;
+    }
+    if (candidate.resumePath) {
+      const parts = candidate.resumePath.split(/[\\/]/);
+      const filename = parts[parts.length - 1];
+      window.open(`http://localhost:5001/api/profile/resume/${filename}`, '_blank');
+    } else {
+      alert('No resume file path available for this candidate.');
+    }
   };
 
   return (
@@ -264,15 +314,17 @@ const EmployerApplicants = () => {
               </div>
 
               <div>
-                <h5 style={{ fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '1px', marginBottom: '0.5rem' }}>Uploaded Resume</h5>
+                <h5 style={{ fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '1px', marginBottom: '0.5rem' }}>
+                  Uploaded Resume {selectedCandidate.isTailored && <span style={{ color: 'var(--primary-color)', textTransform: 'none', fontWeight: '500', marginLeft: '0.5rem' }}>(Tailored for this Job)</span>}
+                </h5>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--bg-color)', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border-color)', marginTop: '0.25rem' }}>
                   <span style={{ fontSize: '0.85rem' }}>📄 {selectedCandidate.resumeName}</span>
                   <button 
                     className="btn-primary-small" 
-                    onClick={(e) => handleDownloadResume(e, selectedCandidate.resumeName)}
+                    onClick={(e) => handleDownloadResume(e, selectedCandidate)}
                     style={{ padding: '0.25rem 0.75rem', fontSize: '0.8rem' }}
                   >
-                    View / Download
+                    {selectedCandidate.isTailored ? 'View Info' : 'View / Download'}
                   </button>
                 </div>
               </div>

@@ -195,7 +195,25 @@ const updateProfile = async (req, res) => {
   }
 };
 
+// Stream/serve resume file
+const getResume = async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const safeFilename = path.basename(filename);
+    const filePath = path.join(__dirname, '../../uploads/resumes', safeFilename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: 'Resume file not found' });
+    }
+
+    res.sendFile(filePath);
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Error downloading resume' });
+  }
+};
+
 module.exports = {
   getProfile,
-  updateProfile
+  updateProfile,
+  getResume
 };

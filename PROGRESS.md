@@ -1,30 +1,36 @@
-# Project Progress (Frontend Only)
+# Project Progress (Full Stack)
 
-This repository currently contains the standalone React frontend for demonstration purposes. The backend and database have been removed to keep the UI plain and easy to present.
+This repository contains a full-stack Job Board application with a React frontend, Node.js/Express backend, PostgreSQL database (via Sequelize), and a Python-based spaCy Resume Parser microservice.
 
 ## Completed Features
-- [x] Scaffolded React frontend using Vite.
-- [x] Configured `react-router-dom` for public and protected routes in `App.jsx`.
-- [x] Created `AuthContext` for global authentication state management.
-- [x] Developed initial `Login` and `Signup` UI pages.
-- [x] Auth Flow Restructure: Added initial Role Selection screen (`/`) which directs users to role-scoped auth forms, resolving redirect bugs.
-- [x] **Candidate UI Redesign**:
-  - Implemented persistent sidebar layout (`CandidateLayout`).
-  - Redesigned `CandidateDashboard` to show applied job cards.
-  - Created `JobProgressDetail` with visual status timeline (Applied -> Reviewed -> Interviewed).
-  - Created `MyProgress` for a high-level view of all applications.
-  - Created `FindJobs` for job discovery with matching scores and tags.
-- [x] **Employer UI Restructure**:
-  - Implemented persistent sidebar layout (`EmployerLayout`) matching the candidate side.
-  - Refactored `EmployerDashboard` to act as a high-level metrics overview.
-  - Created `EmployerMyJobs` to view open job postings.
-  - Created `EmployerApplicants` featuring a pipeline UI to move realistic candidates (Akhil, Kritika, Rohan) through stages.
-- [x] **Global UI Updates**:
-  - Implemented Indian Rupee (₹) formatting for all salary fields.
-  - Created a reusable `ProfileDropdown` in the top navbar.
-  - Created a dynamic, role-aware `ProfilePage` where candidates and employers can edit their info and "save" changes.
-- [x] Added clean, modern, and polished styling across the application via `index.css`.
 
-## Next Steps
-- Consider connecting the frontend to a real backend (Node.js/Express) and database (MongoDB) if the presentation requires live data.
-- Refine animations and add skeleton loaders for smoother page transitions.
+### 1. Backend & Database
+- [x] Node.js & Express REST API Server.
+- [x] PostgreSQL database integration using Sequelize ORM.
+- [x] JWT-based Authentication (Signup, Login, Protected Routes).
+- [x] Candidate and Employer profile management.
+- [x] Job Management API (Create, Read, Update, Delete jobs).
+- [x] Application Management API (Apply, view applications, update status).
+
+### 2. Python Resume Parser
+- [x] Standalone Flask service using spaCy's `PhraseMatcher` and NER.
+- [x] Automated parsing of candidate skills and education from uploaded PDF/Word resumes.
+- [x] Seamless connection with Node.js backend to save parsed attributes.
+
+### 3. Frontend (Vite + React)
+- [x] Redesigned modern, clean dashboards for both Candidates and Employers.
+- [x] Visual pipelines (Applied -> Reviewed -> Interviewing -> Accepted/Rejected).
+- [x] Indian Rupee (₹) formatting for all salary listings.
+- [x] Auth UI Enhancements: password visibility toggles, real-time strength indicator, confirm password matching, and social sign-in buttons.
+
+---
+
+## Postponed / Future Tasks (To Be Implemented Later)
+- [ ] **Real tailored resume file upload & storage**:
+  - *Current State*: The apply-time tailored resume selection UI stores only the chosen filename string and `resumeType` ('tailored') in the database `Application` model.
+  - *Future Work*: Add Multer backend routing to upload the actual tailored file to `/uploads/tailored_resumes/`, link the path in the database, and allow employers to download/view the specific tailored file.
+- [ ] **Real Social Auth Integration**:
+  - *Current State*: Google and Facebook sign-in options are UI/CSS placeholders.
+  - *Future Work*: Integrate `@react-oauth/google` and `react-facebook-login` wrappers for real token exchange.
+- [ ] **Advanced Job Recommendation Engine**:
+  - Use Python service to match candidate parsed skills against job requirements dynamically.

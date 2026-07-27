@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { apiFetch } from '../utils/api';
 
 // Default jobs with rich structure
 const defaultJobs = [
@@ -73,15 +74,41 @@ const EmployerMyJobs = () => {
   const [selectionProcess, setSelectionProcess] = useState('');
   const [additionalRequirements, setAdditionalRequirements] = useState('');
 
-  useEffect(() => {
-    const storedJobs = localStorage.getItem('custom_jobs');
-    if (storedJobs) {
-      setJobs(JSON.parse(storedJobs));
-    } else {
-      localStorage.setItem('custom_jobs', JSON.stringify(defaultJobs));
-      setJobs(defaultJobs);
+  const fetchJobs = async () => {
+    try {
+      if (!user) return;
+      const jobsData = await apiFetch('/jobs');
+      const mapped = (jobsData.jobs || []).filter(j => j.employerId === user.id).map(j => ({
+        id: j.id.toString(),
+        title: j.title,
+        company: j.employer?.employerProfile?.companyName || j.employer?.username || 'Job Board Inc',
+        description: j.description,
+        requiredQualifications: j.requirements || '',
+        requiredSkills: j.requirements || '',
+        experienceRequired: j.jobType || 'Full-time',
+        employmentType: j.jobType || 'Full-time',
+        salary: typeof j.salary === 'number' ? `₹${j.salary.toLocaleString('en-IN')}` : j.salary || 'Not Disclosed',
+        locationType: 'Office',
+        location: j.location,
+        openings: 1,
+        deadline: '2026-12-31',
+        responsibilities: j.description,
+        preferredQualifications: j.requirements,
+        benefits: 'Competitive package',
+        selectionProcess: 'Interview rounds',
+        additionalRequirements: '',
+        status: 'Active',
+        posted: new Date(j.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      }));
+      setJobs(mapped);
+    } catch (err) {
+      console.error('Error fetching jobs:', err.message);
     }
-  }, []);
+  };
+
+  useEffect(() => {
+    fetchJobs();
+  }, [user]);
 
   // Update default company name when user companyName changes
   useEffect(() => {
@@ -90,90 +117,59 @@ const EmployerMyJobs = () => {
     }
   }, [user]);
 
-  const handleCreateJob = (e) => {
+  const handleCreateJob = async (e) => {
     e.preventDefault();
 
-    const newJob = {
-      id: `job-${Math.random().toString(36).substr(2, 9)}`,
-      title,
-      company,
-      description,
-      requiredQualifications,
-      requiredSkills,
-      experienceRequired,
-      employmentType,
-      salary: salary.startsWith('₹') ? salary : `₹${salary}`,
-      locationType,
-      location: location || 'Remote',
-      openings: parseInt(openings) || 1,
-      deadline,
-      responsibilities,
-      preferredQualifications,
-      benefits,
-      selectionProcess,
-      additionalRequirements,
-      status: 'Active',
-      posted: 'Just now'
-    };
+    try {
+      const cleanSalary = parseInt(salary.replace(/[^0-9]/g, '')) || 0;
+      await apiFetch('/jobs', {
+        method: 'POST',
+        body: {
+          title,
+          description,
+          requirements: requiredSkills || requiredQualifications,
+          location: location || 'Remote',
+          salary: cleanSalary,
+          jobType: employmentType
+        }
+      });
 
-    const updatedJobs = [newJob, ...jobs];
-    setJobs(updatedJobs);
-    localStorage.setItem('custom_jobs', JSON.stringify(updatedJobs));
-    
-    // Also push to the mock listings for the candidate side job discovery page
-    const storedListings = localStorage.getItem('custom_listings');
-    const listings = storedListings ? JSON.parse(storedListings) : [];
-    listings.unshift({
-      id: newJob.id,
-      title: newJob.title,
-      company: newJob.company,
-      logo: newJob.company.substring(0, 1).toUpperCase(),
-      location: newJob.locationType === 'Remote' ? 'Remote' : `${newJob.location} (${newJob.locationType})`,
-      salary: newJob.salary,
-      matchPercentage: Math.floor(Math.random() * 25) + 75, // mock match
-      tags: newJob.requiredSkills.split(',').map(s => s.trim()).slice(0, 3),
-      posted: 'Just now',
-      // Store complete info in listings for viewing
-      description: newJob.description,
-      requiredQualifications: newJob.requiredQualifications,
-      responsibilities: newJob.responsibilities,
-      experienceRequired: newJob.experienceRequired,
-      employmentType: newJob.employmentType,
-      openings: newJob.openings,
-      deadline: newJob.deadline,
-      preferredQualifications: newJob.preferredQualifications,
-      benefits: newJob.benefits,
-      selectionProcess: newJob.selectionProcess,
-      additionalRequirements: newJob.additionalRequirements
-    });
-    localStorage.setItem('custom_listings', JSON.stringify(listings));
+      // Reset Form & Close Modal
+      setTitle('');
+      setDescription('');
+      setRequiredQualifications('');
+      setRequiredSkills('');
+      setExperienceRequired('');
+      setEmploymentType('Full-time');
+      setSalary('');
+      setLocationType('Remote');
+      setLocation('');
+      setOpenings(1);
+      setDeadline('');
+      setResponsibilities('');
+      setPreferredQualifications('');
+      setBenefits('');
+      setSelectionProcess('');
+      setAdditionalRequirements('');
+      setShowModal(false);
 
-    // Reset Form & Close Modal
-    setTitle('');
-    setDescription('');
-    setRequiredQualifications('');
-    setRequiredSkills('');
-    setExperienceRequired('');
-    setEmploymentType('Full-time');
-    setSalary('');
-    setLocationType('Remote');
-    setLocation('');
-    setOpenings(1);
-    setDeadline('');
-    setResponsibilities('');
-    setPreferredQualifications('');
-    setBenefits('');
-    setSelectionProcess('');
-    setAdditionalRequirements('');
-    setShowModal(false);
+      // Reload jobs
+      fetchJobs();
+    } catch (err) {
+      alert(err.message || 'Failed to post job');
+    }
   };
 
-  const handleCloseJob = (id) => {
-    const updatedJobs = jobs.map(job => 
-      job.id === id ? { ...job, status: 'Closed' } : job
-    );
-    setJobs(updatedJobs);
-    localStorage.setItem('custom_jobs', JSON.stringify(updatedJobs));
+  const handleCloseJob = async (id) => {
+    try {
+      await apiFetch(`/jobs/${id}`, {
+        method: 'DELETE'
+      });
+      // Reload jobs
+      fetchJobs();
+    } catch (err) {
+      alert(err.message || 'Failed to delete job');
+    }
   };
 
   return (

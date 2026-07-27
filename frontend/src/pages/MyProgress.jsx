@@ -1,19 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { mockAppliedJobs } from '../mockData';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../utils/api';
 
 const MyProgress = () => {
   const navigate = useNavigate();
   const [appliedJobs, setAppliedJobs] = useState([]);
 
   useEffect(() => {
-    const storedApplications = localStorage.getItem('custom_candidate_applications');
-    if (storedApplications) {
-      setAppliedJobs(JSON.parse(storedApplications));
-    } else {
-      localStorage.setItem('custom_candidate_applications', JSON.stringify(mockAppliedJobs));
-      setAppliedJobs(mockAppliedJobs);
-    }
+    const fetchApplications = async () => {
+      try {
+        const appsData = await apiFetch('/applications/my-applications');
+        const mapped = (appsData.applications || []).map(app => {
+          const job = app.job || {};
+          const companyName = job.employer?.employerProfile?.companyName || job.employer?.username || 'Job Board Inc';
+          
+          const timeline = [
+            { step: 'Applied', completed: true },
+            { step: 'Reviewed', completed: app.status !== 'Pending' },
+            { step: 'Interviewed', completed: app.status === 'Accepted' },
+            { step: 'Offered', completed: app.status === 'Accepted' }
+          ];
+
+          if (app.status === 'Rejected') {
+            timeline[3] = { step: 'Rejected', completed: true };
+          }
+
+          return {
+            id: job.id.toString(),
+            title: job.title,
+            company: companyName,
+            status: app.status === 'Pending' ? 'Applied' : app.status,
+            timeline
+          };
+        });
+        setAppliedJobs(mapped);
+      } catch (err) {
+        console.error('Error fetching applications:', err.message);
+      }
+    };
+
+    fetchApplications();
   }, []);
 
   return (
