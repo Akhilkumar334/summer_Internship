@@ -121,7 +121,6 @@ const EmployerMyJobs = () => {
     e.preventDefault();
 
     try {
-      const cleanSalary = parseInt(salary.replace(/[^0-9]/g, '')) || 0;
       await apiFetch('/jobs', {
         method: 'POST',
         body: {
@@ -129,7 +128,7 @@ const EmployerMyJobs = () => {
           description,
           requirements: requiredSkills || requiredQualifications,
           location: location || 'Remote',
-          salary: cleanSalary,
+          salary,
           jobType: employmentType
         }
       });
@@ -256,7 +255,6 @@ const EmployerMyJobs = () => {
                     <option value="Part-time">Part-time</option>
                     <option value="Internship">Internship</option>
                     <option value="Contract">Contract</option>
-                    <option value="Freelance">Freelance</option>
                   </select>
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>
@@ -304,7 +302,7 @@ const EmployerMyJobs = () => {
               <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
                 <div className="form-group" style={{ flex: 1 }}>
                   <label>Required Skills (comma separated)</label>
-                  <input type="text" value={requiredSkills} onChange={(e) => setRequiredSkills(e.target.value)} placeholder="e.g. React, JavaScript, CSS" required />
+                  <input type="text" value={requiredSkills} onChange={(e) => setRequiredSkills(e.target.value)} placeholder="e.g. React, Node.js, Python" required />
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>
                   <label>Experience Required</label>
