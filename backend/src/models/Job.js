@@ -36,6 +36,10 @@ const Job = sequelize.define('Job', {
     allowNull: false,
     defaultValue: 'Full-time',
   },
+  status: {
+    type: DataTypes.ENUM('open', 'closed'),
+    defaultValue: 'open',
+  },
 });
 
 module.exports = Job;

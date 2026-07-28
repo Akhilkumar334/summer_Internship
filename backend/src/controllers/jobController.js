@@ -36,7 +36,7 @@ const createJob = async (req, res) => {
 const getAllJobs = async (req, res) => {
   try {
     const { title, location, jobType } = req.query;
-    const whereClause = {};
+    const whereClause = { status: 'open' };
 
     if (title) {
       whereClause.title = { [Op.iLike]: `%${title}%` };
@@ -55,6 +55,7 @@ const getAllJobs = async (req, res) => {
           model: User,
           as: 'employer',
           attributes: ['id', 'username', 'email'],
+          where: { isActive: true },
           include: [
             {
               model: EmployerProfile,

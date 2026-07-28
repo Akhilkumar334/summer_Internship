@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { Op } = require('sequelize');
 const User = require('../models/User');
-
+const Job = require('../models/Job');
 // Helper function to sign JWT token
 const signToken = (id) => {
   return jwt.sign(
@@ -85,6 +85,10 @@ const login = async (req, res) => {
       return res.status(401).json({ error: 'Incorrect email/username or password' });
     }
 
+    if (!user.isActive) {
+      return res.status(403).json({ error: 'This account has been deactivated.' });
+    }
+
     // Generate token
     const token = signToken(user.id);
 
@@ -120,8 +124,63 @@ const getMe = async (req, res) => {
   }
 };
 
+// Change Password Controller
+const changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'Please provide current and new password' });
+    }
+
+    // Must fetch user with password scope to compare
+    const user = await User.scope('withPassword').findByPk(req.user.id);
+    
+    if (!(await user.comparePassword(currentPassword))) {
+      return res.status(401).json({ error: 'Incorrect current password' });
+    }
+
+    // Update the password
+    user.password = newPassword;
+    await user.save();
+
+    res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Error updating password' });
+  }
+};
+
+// Delete Account (Soft Delete) Controller
+const deleteAccount = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Perform soft delete
+    user.isActive = false;
+    await user.save();
+
+    // If employer, close their jobs
+    if (user.role === 'employer') {
+      await Job.update(
+        { status: 'closed' },
+        { where: { employerId: user.id } }
+      );
+    }
+
+    res.status(200).json({ message: 'Account has been deactivated successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Error deactivating account' });
+  }
+};
+
 module.exports = {
   signup,
   login,
-  getMe
+  getMe,
+  changePassword,
+  deleteAccount
 };

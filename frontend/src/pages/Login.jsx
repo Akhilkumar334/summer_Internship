@@ -31,6 +31,14 @@ const Login = () => {
       });
 
       const { token, user: accountUser } = response;
+
+      // Ensure the user is logging in from the correct page for their role
+      if (accountUser.role !== role) {
+        const intendedType = accountUser.role === 'employer' ? 'Employer' : 'Candidate';
+        setError(`This account is registered as an ${intendedType}. Please use the ${intendedType} login.`);
+        return;
+      }
+
       let profileUser = {};
 
       try {

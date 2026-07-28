@@ -1,9 +1,11 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { AuthContext } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { apiFetch } from '../utils/api';
 
 const ProfilePage = () => {
-  const { user, login, token } = useContext(AuthContext);
+  const { user, login, logout, token } = useContext(AuthContext);
+  const navigate = useNavigate();
 
   // Local state initialized with user context data (with defaults if empty)
   const [candidateData, setCandidateData] = useState({
@@ -32,6 +34,12 @@ const ProfilePage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [resumeFile, setResumeFile] = useState(null);
+
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState({ type: '', text: '' });
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -137,6 +145,45 @@ const ProfilePage = () => {
         resumeName: file.name
       });
       setResumeFile(file);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({ type: 'error', text: 'New passwords do not match' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordMessage({ type: 'error', text: 'Password must be at least 6 characters' });
+      return;
+    }
+    try {
+      const response = await apiFetch('/auth/change-password', {
+        method: 'PUT',
+        body: { currentPassword, newPassword }
+      });
+      setPasswordMessage({ type: 'success', text: response.message });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setPasswordMessage({ type: '', text: '' }), 4000);
+    } catch (err) {
+      setPasswordMessage({ type: 'error', text: err.message });
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    if (window.confirm('Are you sure you want to deactivate your account? This action cannot be undone and you will lose access to the platform.')) {
+      setIsDeleting(true);
+      try {
+        await apiFetch('/auth/account', { method: 'DELETE' });
+        logout();
+        navigate('/login');
+      } catch (err) {
+        alert('Error deactivating account: ' + err.message);
+        setIsDeleting(false);
+      }
     }
   };
 
@@ -359,6 +406,78 @@ const ProfilePage = () => {
             {saveMessage && <span style={{ color: '#10b981', fontWeight: '500' }}>{saveMessage}</span>}
           </div>
         </form>
+      </div>
+
+      <div className="card profile-card" style={{ maxWidth: '750px', margin: '2rem auto 0 auto' }}>
+        <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1rem', marginBottom: '1.5rem' }}>
+          <h3>Account Security</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Update your password.</p>
+        </div>
+        <form onSubmit={handleChangePassword}>
+          <div className="form-group">
+            <label>Current Password</label>
+            <input 
+              type="password" 
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              required
+            />
+          </div>
+          <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label>New Password</label>
+              <input 
+                type="password" 
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label>Confirm New Password</label>
+              <input 
+                type="password" 
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+            <button type="submit" className="btn-secondary">Update Password</button>
+            {passwordMessage.text && (
+              <span style={{ color: passwordMessage.type === 'error' ? '#ef4444' : '#10b981', fontWeight: '500' }}>
+                {passwordMessage.text}
+              </span>
+            )}
+          </div>
+        </form>
+      </div>
+
+      <div className="card profile-card" style={{ maxWidth: '750px', margin: '2rem auto 2rem auto', border: '1px solid #fee2e2' }}>
+        <div style={{ paddingBottom: '1rem', marginBottom: '1rem' }}>
+          <h3 style={{ color: '#ef4444' }}>Danger Zone</h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+            Deactivating your account will immediately remove your ability to log in. 
+            For candidates, your previous applications will remain visible to employers for historical records. 
+            For employers, all of your active job postings will be closed.
+          </p>
+        </div>
+        <button 
+          onClick={handleDeleteAccount} 
+          disabled={isDeleting}
+          style={{
+            backgroundColor: '#ef4444',
+            color: 'white',
+            padding: '0.75rem 1.5rem',
+            borderRadius: '6px',
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: '600'
+          }}
+        >
+          {isDeleting ? 'Deactivating...' : 'Deactivate Account'}
+        </button>
       </div>
     </div>
   );

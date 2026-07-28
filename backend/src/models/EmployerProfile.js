@@ -31,6 +31,10 @@ const EmployerProfile = sequelize.define('EmployerProfile', {
   companyWebsite: {
     type: DataTypes.STRING,
     allowNull: true,
+    set(val) {
+      // Convert empty strings to null to avoid isUrl validation failures
+      this.setDataValue('companyWebsite', val === '' ? null : val);
+    },
     validate: {
       isUrl: true,
     },
