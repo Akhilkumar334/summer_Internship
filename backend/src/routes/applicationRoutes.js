@@ -4,7 +4,8 @@ const {
   applyForJob,
   getMyApplications,
   getJobApplications,
-  updateApplicationStatus
+  updateApplicationStatus,
+  getEmployerStats
 } = require('../controllers/applicationController');
 
 const router = express.Router();
@@ -17,6 +18,7 @@ router.post('/', restrictTo('candidate'), applyForJob);
 router.get('/my-applications', restrictTo('candidate'), getMyApplications);
 
 // Employer routes
+router.get('/stats', restrictTo('employer'), getEmployerStats);
 router.get('/job/:jobId', restrictTo('employer'), getJobApplications);
 router.put('/:id', restrictTo('employer'), updateApplicationStatus);
 

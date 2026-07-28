@@ -54,7 +54,8 @@ const Login = () => {
       // 3. Merge account details and profile details
       const fullUser = {
         ...accountUser,
-        ...profileUser
+        ...profileUser,
+        id: accountUser.id // Critical: Prevent profile.id from overwriting user.id
       };
 
       // 4. Save token and user details to context

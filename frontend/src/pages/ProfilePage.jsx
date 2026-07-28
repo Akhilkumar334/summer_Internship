@@ -124,7 +124,8 @@ const ProfilePage = () => {
 
       const updatedUser = {
         ...user,
-        ...(profileResponse.profile || {})
+        ...(profileResponse.profile || {}),
+        id: user.id // Critical: Prevent profile.id from overwriting user.id
       };
 
       login(updatedUser, token);

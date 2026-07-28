@@ -171,9 +171,47 @@ const updateApplicationStatus = async (req, res) => {
   }
 };
 
+// Get Employer Statistics
+const getEmployerStats = async (req, res) => {
+  try {
+    const employerId = req.user.id;
+
+    // 1. Get total active jobs
+    const activeJobsCount = await Job.count({
+      where: { employerId, status: 'open' }
+    });
+
+    // 2. Get all jobs to find application counts
+    const jobs = await Job.findAll({
+      where: { employerId },
+      attributes: ['id']
+    });
+    
+    const jobIds = jobs.map(j => j.id);
+
+    // 3. Get total applicants and accepted applicants
+    const totalApplicants = await Application.count({
+      where: { jobId: jobIds }
+    });
+
+    const acceptedApplicants = await Application.count({
+      where: { jobId: jobIds, status: 'Accepted' }
+    });
+
+    res.status(200).json({
+      activePostings: activeJobsCount,
+      totalApplicants,
+      interviewsScheduled: acceptedApplicants
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Error fetching stats' });
+  }
+};
+
 module.exports = {
   applyForJob,
   getMyApplications,
   getJobApplications,
-  updateApplicationStatus
+  updateApplicationStatus,
+  getEmployerStats
 };

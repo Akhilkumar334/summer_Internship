@@ -32,7 +32,8 @@ export const AuthProvider = ({ children }) => {
           setToken(storedToken);
           setUser({
             ...meData.user,
-            ...profileData
+            ...profileData,
+            id: meData.user.id // Critical: Prevent profile.id from overwriting user.id
           });
         } catch (err) {
           console.error('Session expired or invalid token:', err.message);

@@ -153,7 +153,8 @@ const Signup = () => {
 
       const fullUser = {
         ...accountUser,
-        ...(profileResponse.profile || {})
+        ...(profileResponse.profile || {}),
+        id: accountUser.id // Critical: Prevent profile.id from overwriting user.id
       };
 
       // 3. Set verified context
