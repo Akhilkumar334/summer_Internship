@@ -23,6 +23,16 @@ const Job = sequelize.define('Job', {
     type: DataTypes.TEXT, // comma-separated skills/requirements
     allowNull: false,
   },
+  requiredSkills: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    defaultValue: '',
+  },
+  niceToHaveSkills: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+    defaultValue: '',
+  },
   location: {
     type: DataTypes.STRING,
     allowNull: false,

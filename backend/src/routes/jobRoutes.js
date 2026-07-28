@@ -1,5 +1,5 @@
 const express = require('express');
-const { protect, restrictTo } = require('../middleware/authMiddleware');
+const { protect, restrictTo, optionalProtect } = require('../middleware/authMiddleware');
 const {
   createJob,
   getAllJobs,
@@ -10,9 +10,9 @@ const {
 
 const router = express.Router();
 
-// Public routes
-router.get('/', getAllJobs);
-router.get('/:id', getJobById);
+// Public routes (with optional authentication for matching scores)
+router.get('/', optionalProtect, getAllJobs);
+router.get('/:id', optionalProtect, getJobById);
 
 // Protected routes (Employer only)
 router.post('/', protect, restrictTo('employer'), createJob);

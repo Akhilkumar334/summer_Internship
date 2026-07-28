@@ -61,6 +61,7 @@ const EmployerMyJobs = () => {
   const [description, setDescription] = useState('');
   const [requiredQualifications, setRequiredQualifications] = useState('');
   const [requiredSkills, setRequiredSkills] = useState('');
+  const [niceToHaveSkills, setNiceToHaveSkills] = useState('');
   const [experienceRequired, setExperienceRequired] = useState('');
   const [employmentType, setEmploymentType] = useState('Full-time');
   const [salary, setSalary] = useState('');
@@ -127,6 +128,8 @@ const EmployerMyJobs = () => {
           title,
           description,
           requirements: requiredSkills || requiredQualifications,
+          requiredSkills,
+          niceToHaveSkills,
           location: location || 'Remote',
           salary,
           jobType: employmentType
@@ -138,6 +141,7 @@ const EmployerMyJobs = () => {
       setDescription('');
       setRequiredQualifications('');
       setRequiredSkills('');
+      setNiceToHaveSkills('');
       setExperienceRequired('');
       setEmploymentType('Full-time');
       setSalary('');
@@ -305,9 +309,14 @@ const EmployerMyJobs = () => {
                   <input type="text" value={requiredSkills} onChange={(e) => setRequiredSkills(e.target.value)} placeholder="e.g. React, Node.js, Python" required />
                 </div>
                 <div className="form-group" style={{ flex: 1 }}>
-                  <label>Experience Required</label>
-                  <input type="text" value={experienceRequired} onChange={(e) => setExperienceRequired(e.target.value)} placeholder="e.g. 2-3 years, Freshers welcome" required />
+                  <label>Nice-to-have Skills (comma separated)</label>
+                  <input type="text" value={niceToHaveSkills} onChange={(e) => setNiceToHaveSkills(e.target.value)} placeholder="e.g. TypeScript, Docker, AWS" />
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label>Experience Required</label>
+                <input type="text" value={experienceRequired} onChange={(e) => setExperienceRequired(e.target.value)} placeholder="e.g. 2-3 years, Freshers welcome" required />
               </div>
 
               <div className="form-group">

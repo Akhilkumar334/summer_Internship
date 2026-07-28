@@ -48,4 +48,24 @@ const restrictTo = (...roles) => {
   };
 };
 
-module.exports = { protect, restrictTo };
+const optionalProtect = async (req, res, next) => {
+  try {
+    let token;
+    if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (token) {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'super_secret_key_change_this_in_production_12345');
+      const currentUser = await User.findByPk(decoded.id);
+      if (currentUser) {
+        req.user = currentUser;
+      }
+    }
+    next();
+  } catch (error) {
+    next();
+  }
+};
+
+module.exports = { protect, restrictTo, optionalProtect };

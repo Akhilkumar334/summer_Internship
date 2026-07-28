@@ -109,7 +109,8 @@ const FindJobs = () => {
           preferredQualifications: j.requirements,
           benefits: 'Competitive package',
           selectionProcess: 'Interview rounds',
-          additionalRequirements: ''
+          additionalRequirements: '',
+          matchPercentage: j.matchPercentage
         }));
         setListings(mappedJobs);
 
@@ -191,12 +192,14 @@ const FindJobs = () => {
                   <h3>{job.title}</h3>
                   <p>{job.company} &bull; {job.location}</p>
                 </div>
-                <div className="match-score">
-                  <div className="score-circle">
-                    <span>{job.matchPercentage}%</span>
+                {job.matchPercentage !== null && job.matchPercentage !== undefined && (
+                  <div className="match-score">
+                    <div className="score-circle">
+                      <span>{job.matchPercentage}%</span>
+                    </div>
+                    <span className="score-label">Match</span>
                   </div>
-                  <span className="score-label">Match</span>
-                </div>
+                )}
               </div>
               
               <div className="listing-middle">
