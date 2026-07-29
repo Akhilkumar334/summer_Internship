@@ -86,18 +86,18 @@ const EmployerMyJobs = () => {
         description: j.description,
         requiredQualifications: j.requirements || '',
         requiredSkills: j.requirements || '',
-        experienceRequired: j.jobType || 'Full-time',
+        experienceRequired: j.experienceRequired || j.jobType || 'Full-time',
         employmentType: j.jobType || 'Full-time',
         salary: typeof j.salary === 'number' ? `₹${j.salary.toLocaleString('en-IN')}` : j.salary || 'Not Disclosed',
         locationType: 'Office',
         location: j.location,
-        openings: 1,
-        deadline: '2026-12-31',
-        responsibilities: j.description,
-        preferredQualifications: j.requirements,
-        benefits: 'Competitive package',
-        selectionProcess: 'Interview rounds',
-        additionalRequirements: '',
+        openings: j.openings || 1,
+        deadline: j.deadline || '',
+        responsibilities: j.responsibilities || j.description,
+        preferredQualifications: j.preferredQualifications || j.requirements,
+        benefits: j.benefits || '',
+        selectionProcess: j.selectionProcess || '',
+        additionalRequirements: j.additionalRequirements || '',
         status: 'Active',
         posted: new Date(j.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       }));
@@ -132,7 +132,15 @@ const EmployerMyJobs = () => {
           niceToHaveSkills,
           location: location || 'Remote',
           salary,
-          jobType: employmentType
+          jobType: employmentType,
+          openings,
+          deadline,
+          experienceRequired,
+          responsibilities,
+          preferredQualifications,
+          benefits,
+          selectionProcess,
+          additionalRequirements
         }
       });
 

@@ -46,6 +46,38 @@ const Job = sequelize.define('Job', {
     allowNull: false,
     defaultValue: 'Full-time',
   },
+  openings: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1,
+  },
+  deadline: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  experienceRequired: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  responsibilities: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  preferredQualifications: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  benefits: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  selectionProcess: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
+  additionalRequirements: {
+    type: DataTypes.TEXT,
+    allowNull: true,
+  },
   status: {
     type: DataTypes.ENUM('open', 'closed'),
     defaultValue: 'open',

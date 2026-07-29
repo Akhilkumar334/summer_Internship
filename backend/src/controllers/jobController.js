@@ -48,7 +48,10 @@ const calculateMatchPercentage = (candidateSkillsStr, requiredSkillsStr, niceToH
 // Create a new Job Listing
 const createJob = async (req, res) => {
   try {
-    const { title, description, requirements, requiredSkills, niceToHaveSkills, location, salary, jobType } = req.body;
+    const { 
+      title, description, requirements, requiredSkills, niceToHaveSkills, location, salary, jobType,
+      openings, deadline, experienceRequired, responsibilities, preferredQualifications, benefits, selectionProcess, additionalRequirements
+    } = req.body;
     const employerId = req.user.id;
 
     const finalRequiredSkills = requiredSkills || requirements || '';
@@ -67,7 +70,15 @@ const createJob = async (req, res) => {
       niceToHaveSkills: finalNiceToHaveSkills,
       location,
       salary,
-      jobType
+      jobType,
+      openings,
+      deadline,
+      experienceRequired,
+      responsibilities,
+      preferredQualifications,
+      benefits,
+      selectionProcess,
+      additionalRequirements
     });
 
     res.status(201).json({
@@ -194,7 +205,10 @@ const getJobById = async (req, res) => {
 const updateJob = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, requirements, requiredSkills, niceToHaveSkills, location, salary, jobType } = req.body;
+    const { 
+      title, description, requirements, requiredSkills, niceToHaveSkills, location, salary, jobType,
+      openings, deadline, experienceRequired, responsibilities, preferredQualifications, benefits, selectionProcess, additionalRequirements
+    } = req.body;
     const employerId = req.user.id;
 
     const job = await Job.findByPk(id);
@@ -219,7 +233,15 @@ const updateJob = async (req, res) => {
       niceToHaveSkills: finalNiceToHaveSkills,
       location: location || job.location,
       salary: salary !== undefined ? salary : job.salary,
-      jobType: jobType || job.jobType
+      jobType: jobType || job.jobType,
+      openings: openings !== undefined ? openings : job.openings,
+      deadline: deadline !== undefined ? deadline : job.deadline,
+      experienceRequired: experienceRequired !== undefined ? experienceRequired : job.experienceRequired,
+      responsibilities: responsibilities !== undefined ? responsibilities : job.responsibilities,
+      preferredQualifications: preferredQualifications !== undefined ? preferredQualifications : job.preferredQualifications,
+      benefits: benefits !== undefined ? benefits : job.benefits,
+      selectionProcess: selectionProcess !== undefined ? selectionProcess : job.selectionProcess,
+      additionalRequirements: additionalRequirements !== undefined ? additionalRequirements : job.additionalRequirements
     });
 
     res.status(200).json({
