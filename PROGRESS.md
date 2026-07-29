@@ -23,6 +23,10 @@ This repository contains a full-stack Job Board application with a React fronten
 - [x] Indian Rupee (₹) formatting for all salary listings.
 - [x] Auth UI Enhancements: password visibility toggles, real-time strength indicator, confirm password matching, and social sign-in buttons.
 
+### 4. Advanced Job Recommendation Engine
+- [x] Node.js based cosine similarity algorithm to match parsed candidate skills against job requirements dynamically.
+- [x] Computes double-weighted required skills vs single-weighted nice-to-have skills for a realistic matching score.
+
 ---
 
 ## Postponed / Future Tasks (To Be Implemented Later)
@@ -32,5 +36,3 @@ This repository contains a full-stack Job Board application with a React fronten
 - [ ] **Real Social Auth Integration**:
   - *Current State*: Google and Facebook sign-in options are UI/CSS placeholders.
   - *Future Work*: Integrate `@react-oauth/google` and `react-facebook-login` wrappers for real token exchange.
-- [ ] **Advanced Job Recommendation Engine**:
-  - Use Python service to match candidate parsed skills against job requirements dynamically.
