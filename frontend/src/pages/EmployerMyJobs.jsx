@@ -78,8 +78,8 @@ const EmployerMyJobs = () => {
   const fetchJobs = async () => {
     try {
       if (!user) return;
-      const jobsData = await apiFetch('/jobs');
-      const mapped = (jobsData.jobs || []).filter(j => j.employerId === user.id).map(j => ({
+      const jobsData = await apiFetch('/jobs/employer/my-jobs');
+      const mapped = (jobsData.jobs || []).map(j => ({
         id: j.id.toString(),
         title: j.title,
         company: j.employer?.employerProfile?.companyName || j.employer?.username || 'Job Board Inc',
@@ -98,7 +98,7 @@ const EmployerMyJobs = () => {
         benefits: j.benefits || '',
         selectionProcess: j.selectionProcess || '',
         additionalRequirements: j.additionalRequirements || '',
-        status: 'Active',
+        status: j.status === 'open' ? 'Active' : 'Closed',
         posted: new Date(j.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
       }));
       setJobs(mapped);
@@ -174,12 +174,24 @@ const EmployerMyJobs = () => {
   const handleCloseJob = async (id) => {
     try {
       await apiFetch(`/jobs/${id}`, {
-        method: 'DELETE'
+        method: 'PUT',
+        body: { status: 'closed' }
       });
-      // Reload jobs
       fetchJobs();
     } catch (err) {
-      alert(err.message || 'Failed to delete job');
+      alert(err.message || 'Failed to close job');
+    }
+  };
+
+  const handleReopenJob = async (id) => {
+    try {
+      await apiFetch(`/jobs/${id}`, {
+        method: 'PUT',
+        body: { status: 'open' }
+      });
+      fetchJobs();
+    } catch (err) {
+      alert(err.message || 'Failed to reopen job');
     }
   };
 
@@ -229,7 +241,9 @@ const EmployerMyJobs = () => {
                         Close Posting
                       </button>
                     ) : (
-                      <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No actions</span>
+                      <button className="btn-text" style={{ color: 'var(--primary-color)' }} onClick={() => handleReopenJob(job.id)}>
+                        Reopen Posting
+                      </button>
                     )}
                   </td>
                 </tr>

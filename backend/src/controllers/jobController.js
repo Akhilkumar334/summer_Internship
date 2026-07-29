@@ -149,9 +149,42 @@ const getAllJobs = async (req, res) => {
       return jobJson;
     });
 
-    res.status(200).json({ jobs: jobsWithScores });
+    res.status(200).json({
+      count: jobsWithScores.length,
+      jobs: jobsWithScores
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message || 'Error fetching jobs' });
+    res.status(500).json({ error: error.message || 'Error fetching job listings' });
+  }
+};
+
+// Retrieve all Job Listings for the logged-in Employer (Includes closed jobs)
+const getMyEmployerJobs = async (req, res) => {
+  try {
+    const employerId = req.user.id;
+    const jobs = await Job.findAll({
+      where: { employerId },
+      include: [
+        {
+          model: User,
+          as: 'employer',
+          attributes: ['id', 'username', 'email'],
+          include: [{
+            model: EmployerProfile,
+            as: 'employerProfile',
+            attributes: ['companyName', 'companyWebsite', 'companyDescription']
+          }]
+        }
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    res.status(200).json({
+      count: jobs.length,
+      jobs: jobs
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message || 'Error fetching your job listings' });
   }
 };
 
@@ -207,7 +240,7 @@ const updateJob = async (req, res) => {
     const { id } = req.params;
     const { 
       title, description, requirements, requiredSkills, niceToHaveSkills, location, salary, jobType,
-      openings, deadline, experienceRequired, responsibilities, preferredQualifications, benefits, selectionProcess, additionalRequirements
+      openings, deadline, experienceRequired, responsibilities, preferredQualifications, benefits, selectionProcess, additionalRequirements, status
     } = req.body;
     const employerId = req.user.id;
 
@@ -241,7 +274,8 @@ const updateJob = async (req, res) => {
       preferredQualifications: preferredQualifications !== undefined ? preferredQualifications : job.preferredQualifications,
       benefits: benefits !== undefined ? benefits : job.benefits,
       selectionProcess: selectionProcess !== undefined ? selectionProcess : job.selectionProcess,
-      additionalRequirements: additionalRequirements !== undefined ? additionalRequirements : job.additionalRequirements
+      additionalRequirements: additionalRequirements !== undefined ? additionalRequirements : job.additionalRequirements,
+      status: status || job.status
     });
 
     res.status(200).json({
@@ -281,6 +315,7 @@ const deleteJob = async (req, res) => {
 module.exports = {
   createJob,
   getAllJobs,
+  getMyEmployerJobs,
   getJobById,
   updateJob,
   deleteJob
