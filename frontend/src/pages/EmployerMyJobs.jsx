@@ -211,6 +211,7 @@ const EmployerMyJobs = () => {
             <thead>
               <tr>
                 <th>Job Title</th>
+                <th>Description</th>
                 <th>Location Type</th>
                 <th>Location</th>
                 <th>Salary Range</th>
@@ -225,6 +226,9 @@ const EmployerMyJobs = () => {
                   <td>
                     <strong>{job.title}</strong>
                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{job.company}</div>
+                  </td>
+                  <td style={{ maxWidth: '200px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={job.description}>
+                    {job.description || 'No description'}
                   </td>
                   <td>{job.locationType}</td>
                   <td>{job.location}</td>
