@@ -172,7 +172,8 @@ const getMyEmployerJobs = async (req, res) => {
           include: [{
             model: EmployerProfile,
             as: 'employerProfile',
-            attributes: ['companyName', 'companyWebsite', 'companyDescription']
+            attributes: ['companyName', 'companyWebsite', 'companyDescription'],
+            required: false
           }]
         }
       ],
